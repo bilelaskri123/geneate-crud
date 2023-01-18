@@ -2,34 +2,82 @@
 
 npm install express mysql2 sequelize --save
 
-case $1 in
-	"make")
-		mkdir routes
-		mkdir controllers
-		touch controllers/$2.js
+if [ ! -d models ] 
+then
+	echo "create models directory."
+	mkdir models
+else
+	echo "models directory already exists."
+fi
 
-		# echo script
-		echo "
+if [ ! -f models/$1.js  ]
+then
+	echo "create $1.js model"
+	touch models/$1.js
+else
+	echo "$1.js model already exists."
+fi
+
+echo "
+	const { DataTypes, Model } = require('sequelize');
+	const sequelize = require('../helpers/connect-to-database').sequelize;
+	
+	class $1 extends Model {}
+
+	$1.init({
+		
+	}, {
+		sequelize,
+		tableName: '$1s',
+		paranoid: true,
+		timestamps: true
+	});
+
+	module.exports = $1;
+	" >models/$1.js
+
+if [ ! -d routes  ]
+then
+	echo "create routes directory."
+	mkdir routes
+else
+	echo "routes already exists."
+fi
+
+if [ ! -d controllers ]
+then
+	echo "create controllers directory."
+	mkdir controllers
+else
+	echo "controllers already exists."
+fi
+
+touch controllers/$1.controller.js
+
+# echo routes template
+echo "create routes template."
+echo "
 		const express = require('express');
 		const router = express.Router();
-		const Controllers = require('../Controllers/$2');
+		const Controllers = require('../controllers/$1');
 
-		router.post('/$2', Controllers.Add);
-		router.get('/$2', Controllers.GetAll);
-		router.get('/$2/:id', Controllers.GetOne);
-		router.put('/$2/:id', Controllers.UpdateOne);
-		router.delete('/$2/:id', Controllers.DeleteOne);
+		router.post('/$1', Controllers.Add);
+		router.get('/$1', Controllers.GetAll);
+		router.get('/$1/:id', Controllers.GetOne);
+		router.put('/$1/:id', Controllers.UpdateOne);
+		router.delete('/$1/:id', Controllers.DeleteOne);
 
-		module.exports = Router;"> routes/router$2.js
+		module.exports = Router;" >routes/$1.routes.js
 
-		# echo script
-		echo "
-		const $2 = require('../models/$2');
+# echo controllers template
+ech "create controllers template."
+echo "
+		const $1 = require('../models/$1');
 
-		/* Add $2 */
+		/* Add $1 */
 		const Add = async (req, res) => {
 			try{
-				await $2.create(req.body);
+				await $1.create(req.body);
 				res.status(201).json({success: true});
 			}catch(error) {
 				res.status(500).json({error: error.message});
@@ -39,40 +87,37 @@ case $1 in
 		/* GelAll */
 		const GetAll = async (req, res) => {
 			try {
-				 const data = await $2.findAll();
+				 const data = await $1.findAll();
 				 res.status(200).json(data);
 			 }catch(error) {
 		 	       	res.status(500).json({error: error.message});
 		 	 }
 		}
 
-		/* GetOne $2 */
-
+		/* GetOne $1 */
 		const GetOne = async(req, res) => {
 			try {
-				const data = await $2.findOne({where: {id: req.params.id}});
+				const data = await $1.findOne({where: {id: req.params.id}});
 				res.status(200).json(data);
 			} catch(error) {
 				res.status(500).json({error: error.message});
 			}
 		}
 
-		/* UpdateOne $2  */
-
+		/* UpdateOne $1  */
 		const UpdateOne = async(req, res) => {
 			try {
-				await $2.update(req.body, {where: {id: req.params.id}});
+				await $1.update(req.body, {where: {id: req.params.id}});
 				res.status(200).json({success: true});
 			}catch(error){
 				res.status(500).json({error: error.message});
 			}
 		}	
 
-		/* DeleteOne $2  */
-
+		/* DeleteOne $1  */
 		const DeleteOne = async(req, res)=> {
 			try{
-				await $2.destroy({where: {id: req.params.id}});
+				await $1.destroy({where: {id: req.params.id}});
 				res.status(200).json({success: true});
 			}catch(error) {
 				res.status(500).json({error: error.message});
@@ -86,29 +131,6 @@ case $1 in
 			UpdateOne,
 			DeleteOne
 		};
-		">controllers/$2.js
-		;;
-"models")
-	mkdir models
-	touch models/$2.js
+		" >controllers/$1.controller.js
 
 
-	echo "
-	const { DataTypes, Model } = require('sequelize');
-	const sequelize = require('../helpers/connect-to-database').sequelize;
-	
-	class $2 extends Model {}
-
-	$2.init({
-		
-	}, {
-		sequelize,
-		tableName: '$2s',
-		paranoid: true,
-		timestamps: true
-	});
-
-	module.exports = $2;
-	"> models/$2.js
-	;;
-esac
